@@ -1,0 +1,20 @@
+{
+  "name": "karmora-scanner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VPS worker — scans Reddit, classifies leads, writes to Supabase",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "scan:once": "node index.js --once",
+    "scan:loop": "node index.js",
+    "classify": "node classify.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "openai": "^4.68.0",
+    "p-limit": "^6.1.0",
+    "undici": "^6.19.8"
+  }
+}
