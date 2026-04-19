@@ -1,5 +1,7 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+
+type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 // For server components + API routes — uses user's auth cookie
 export function createServer() {
@@ -12,7 +14,7 @@ export function createServer() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(list) {
+        setAll(list: CookieToSet[]) {
           try {
             list.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)

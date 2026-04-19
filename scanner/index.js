@@ -19,6 +19,7 @@ import { loadProxies, getProxyCount } from './proxy.js';
 import { matchIntentPatterns, matchesProject } from './patterns.js';
 import { scoreLead } from './scorer.js';
 import {
+  db,
   getActiveProjects,
   upsertRawPosts,
   insertLead,
@@ -100,13 +101,11 @@ async function scanProject(project) {
       }
 
       // 5. find the raw_post_id we just inserted
-      const { data: rawRow } = await import('./db.js').then(({ db }) =>
-        db
-          .from('raw_posts')
-          .select('id')
-          .eq('reddit_id', c.post.reddit_id)
-          .maybeSingle()
-      );
+      const { data: rawRow } = await db
+        .from('raw_posts')
+        .select('id')
+        .eq('reddit_id', c.post.reddit_id)
+        .maybeSingle();
       if (!rawRow) continue;
 
       await insertLead({

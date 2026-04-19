@@ -6,6 +6,15 @@ Format: `YYYY-MM-DD — decision — why`
 
 ---
 
+## 2026-04-19 — v1 build (sessions 2-9 compressed)
+
+- **Compressed sessions 2-9 into one build** — user prioritised functioning v1 over the staged session plan. Tradeoff: no end-to-end runtime verification (no Supabase project, no keys), only typecheck + production build. Code is in place; live verification happens when user wires keys.
+- **`openai` added to root package.json** — needed in `app/api/openers/route.ts` for opener generation. Already lived in `scanner/package.json`; same package, two separate node_modules trees by design (scanner is a self-contained VPS deploy).
+- **`eslint` pinned to ^8.57.0** — eslint-config-next 14.2 peer-deps require eslint 7 or 8. Original scaffold's ^9 caused install failure.
+- **`next` and `eslint-config-next` bumped to 14.2.35** — original 14.2.15 had a security advisory (2025-12-11). Stayed within 14.2.x to avoid major-version churn. Four remaining audit findings need Next 16; documented in README.
+- **Stripe API version bumped to `2025-02-24.acacia`** — match installed `stripe@17.x` types. Wire as part of v1 webhook stub; checkout/portal still deferred.
+- **Opener UI ships Safe mode only** — Soft/Promo prompts exist; UI toggle is post-validation. Karma gate logic for Promo lives in the API route already (`reddit_karma >= 1000`) so adding the UI later is just a button.
+
 ## 2026-04-19 — Initial architecture
 
 - **Next.js 14 App Router** — same stack as Xylo, lowest cognitive load
