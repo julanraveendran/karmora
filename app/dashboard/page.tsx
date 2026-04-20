@@ -29,16 +29,24 @@ export default async function DashboardPage() {
       </header>
 
       <section>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
           <h2 className="text-lg font-semibold">Your projects</h2>
-          {(projects?.length ?? 0) > 0 && (
+          <div className="flex items-center gap-2">
             <a
-              href="/onboarding"
-              className="text-sm bg-accent text-black rounded px-3 py-1.5 font-medium"
+              href="/dashboard/templates"
+              className="text-sm border border-neutral-800 rounded px-3 py-1.5 hover:border-accent"
             >
-              + New project
+              Viral templates
             </a>
-          )}
+            {(projects?.length ?? 0) > 0 && (
+              <a
+                href="/onboarding"
+                className="text-sm bg-accent text-black rounded px-3 py-1.5 font-medium"
+              >
+                + New project
+              </a>
+            )}
+          </div>
         </div>
 
         {projects?.length === 0 ? (
