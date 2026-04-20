@@ -29,7 +29,7 @@ import {
 import { sendTelegram, alertError, alertRunSummary } from './telegram.js';
 
 const LOOP_DELAY_MS = 60 * 60 * 1000; // 1h
-const LLM_SCORE_THRESHOLD = 3; // only LLM-score posts with pattern_score >= 3
+const LLM_SCORE_THRESHOLD = 1; // only LLM-score posts with pattern_score >= 1
 const LLM_MAX_PER_RUN = 50;    // cost cap: max LLM calls per project per run
 
 async function scanProject(project) {
