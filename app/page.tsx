@@ -1,6 +1,6 @@
 import { createServer } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
-import { SignInForm } from '@/components/SignInForm';
+import LandingPage from '@/components/LandingPage';
 
 export default async function Home({
   searchParams,
@@ -14,36 +14,11 @@ export default async function Home({
 
   if (user) redirect('/dashboard');
 
-  const authError = searchParams.auth_error;
-  const authErrorDesc = searchParams.auth_error_desc;
+  // NOTE: auth errors (expired magic links etc.) are currently silent on the
+  // landing — they were previously surfaced on the bare sign-in page. If we
+  // start seeing user reports, surface searchParams.auth_error in the landing's
+  // Hero component (pass it in as a prop).
+  void searchParams;
 
-  return (
-    <main className="min-h-screen flex items-center justify-center p-8">
-      <div className="max-w-md w-full">
-        <h1 className="text-4xl font-bold mb-2">Karmora</h1>
-        <p className="text-muted mb-8">
-          Reddit customer discovery for founders. High-intent leads, AI-scored,
-          human-approved.
-        </p>
-        {authError && (
-          <div className="mb-4 border border-red-900 bg-red-950/30 rounded p-3 text-sm">
-            <div className="font-medium text-red-400">
-              Sign-in failed: {authError}
-            </div>
-            {authErrorDesc && (
-              <div className="text-red-300/80 mt-1">{authErrorDesc}</div>
-            )}
-            <div className="text-muted mt-2 text-xs">
-              Click the link in the same browser you submitted from, within 5
-              minutes. Request a fresh link below.
-            </div>
-          </div>
-        )}
-        <SignInForm />
-        <p className="text-xs text-muted mt-6">
-          We email you a one-time link. No password.
-        </p>
-      </div>
-    </main>
-  );
+  return <LandingPage />;
 }

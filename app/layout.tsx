@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Karmora — Reddit customer discovery copilot',
+  title: 'Karmora — High-intent conversations, on tap',
   description:
-    'Find high-intent leads on Reddit. AI-scored, human-approved. Built for founders.',
+    'Karmora learns your product, maps your ICP, watches the right subreddits hourly, and hands you high-intent conversations to reply to with value.',
 };
 
 export default function RootLayout({
@@ -14,7 +14,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-black">{children}</body>
     </html>
   );
 }
