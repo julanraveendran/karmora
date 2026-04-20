@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useRef,
+  useLayoutEffect,
   type CSSProperties,
   type ReactNode,
 } from 'react';
@@ -570,7 +571,10 @@ function WalkingMascot({ accent }: { accent: string }) {
   const leanDeg = 4;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 z-[15]" style={{ bottom: '16%' }}>
+    <div
+      className="pointer-events-none absolute inset-x-0 z-[4]"
+      style={{ bottom: 'clamp(140px, 22%, 180px)' }}
+    >
       <div className="relative w-full h-0">
         <div
           style={{
@@ -667,6 +671,7 @@ function Hero({ accent }: { accent: string }) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -705,12 +710,14 @@ function Hero({ accent }: { accent: string }) {
       </svg>
 
       <div
-        className="hidden lg:block absolute right-6 top-0 bottom-0 w-[360px] overflow-hidden z-[5]"
+        className="hidden xl:block absolute right-6 top-0 bottom-0 w-[340px] overflow-hidden z-[5]"
         style={{
           maskImage:
-            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%)',
+            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%), linear-gradient(270deg, black 70%, transparent 100%)',
+          maskComposite: 'intersect',
           WebkitMaskImage:
-            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%)',
+            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%), linear-gradient(270deg, black 70%, transparent 100%)',
+          WebkitMaskComposite: 'source-in',
         }}
       >
         <div className="feed-scroll flex flex-col gap-3 pt-8">
@@ -721,12 +728,14 @@ function Hero({ accent }: { accent: string }) {
       </div>
 
       <div
-        className="hidden lg:block absolute left-6 top-0 bottom-0 w-[360px] overflow-hidden z-[5]"
+        className="hidden xl:block absolute left-6 top-0 bottom-0 w-[340px] overflow-hidden z-[5]"
         style={{
           maskImage:
-            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%)',
+            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%), linear-gradient(90deg, black 70%, transparent 100%)',
+          maskComposite: 'intersect',
           WebkitMaskImage:
-            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%)',
+            'linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%), linear-gradient(90deg, black 70%, transparent 100%)',
+          WebkitMaskComposite: 'source-in',
         }}
       >
         <div className="feed-scroll-reverse flex flex-col gap-3 pt-8">
@@ -736,10 +745,10 @@ function Hero({ accent }: { accent: string }) {
         </div>
       </div>
 
-      <nav className="z-20 w-full flex justify-center pt-6 px-4">
-        <div className="liquid-glass rounded-full max-w-5xl w-full px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
+      <nav className="z-20 w-full flex justify-center pt-6 px-4 relative">
+        <div className="liquid-glass rounded-full max-w-5xl w-full px-5 md:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-8 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
               <div className="relative w-7 h-7">
                 <div
                   className="absolute inset-0 rounded-full"
@@ -759,18 +768,59 @@ function Hero({ accent }: { accent: string }) {
               <a href="#manifesto" className="nav-link hover:text-white transition">Manifesto</a>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <a href="#signup" className="text-white/80 hover:text-white text-sm font-medium">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <a
+              href="#signup"
+              className="hidden sm:inline-block text-white/80 hover:text-white text-sm font-medium whitespace-nowrap"
+            >
               Sign up
             </a>
             <a
               href="#signup"
-              className="liquid-glass rounded-full px-5 py-2 text-sm font-medium text-white hover:bg-white/5 transition"
+              className="liquid-glass rounded-full px-4 md:px-5 py-2 text-sm font-medium text-white hover:bg-white/5 transition whitespace-nowrap"
             >
               Login
             </a>
+            <button
+              type="button"
+              aria-label="Toggle menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+              className="md:hidden liquid-glass rounded-full w-10 h-10 grid place-items-center text-white/80 hover:text-white"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                {menuOpen ? (
+                  <>
+                    <path d="M6 6l12 12" />
+                    <path d="M6 18L18 6" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M4 7h16" />
+                    <path d="M4 12h16" />
+                    <path d="M4 17h16" />
+                  </>
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+        {menuOpen && (
+          <div className="md:hidden absolute top-full left-4 right-4 mt-2 liquid-glass rounded-2xl p-4 flex flex-col gap-1 text-sm text-white/80 font-medium z-30">
+            <a href="#how" onClick={() => setMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-white/5">
+              How it works
+            </a>
+            <a href="#pricing" onClick={() => setMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-white/5">
+              Pricing
+            </a>
+            <a href="#manifesto" onClick={() => setMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-white/5">
+              Manifesto
+            </a>
+            <a href="#signup" onClick={() => setMenuOpen(false)} className="sm:hidden px-3 py-2 rounded-lg hover:bg-white/5">
+              Sign up
+            </a>
+          </div>
+        )}
       </nav>
 
       <div
@@ -782,7 +832,7 @@ function Hero({ accent }: { accent: string }) {
           LIVE · 4,812 THREADS SCANNED IN THE LAST HOUR
         </div>
 
-        <h1 className="text-4xl md:text-5xl lg:text-6xl text-white tracking-tight balance max-w-2xl mb-6 leading-[1.05]">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white tracking-tight balance max-w-2xl mb-6 leading-[1.08]">
           <span>High-intent </span>
           <span className="serif-i text-white/70">conversations</span>
           <span>,</span>
@@ -899,7 +949,7 @@ function About({ accent }: { accent: string }) {
     <section
       id="how"
       ref={ref}
-      className="relative bg-black pt-32 md:pt-44 pb-10 md:pb-14 px-6"
+      className="relative overflow-hidden bg-black pt-20 md:pt-44 pb-10 md:pb-14 px-6"
       style={{
         backgroundImage:
           'radial-gradient(ellipse at top, rgba(255,255,255,0.03) 0%, transparent 70%)',
@@ -915,7 +965,7 @@ function About({ accent }: { accent: string }) {
         </div>
 
         <div className="mb-16">
-          <h2 className="text-4xl md:text-6xl lg:text-7xl text-white leading-[1.08] tracking-tight balance">
+          <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl text-white leading-[1.1] tracking-tight balance">
             Built for founders who sell with <span className="serif-i text-white/60">empathy</span>,
             <br className="hidden md:block" /> not with <span className="serif-i text-white/60">noise</span>. We read{' '}
             <span className="serif-i text-white/60">the room</span>,
@@ -1015,7 +1065,7 @@ function FeaturedBlock({ accent }: { accent: string }) {
   }, [inView]);
 
   return (
-    <section ref={ref} className="relative bg-black pt-6 md:pt-10 pb-20 md:pb-32 px-6">
+    <section ref={ref} className="relative overflow-hidden bg-black pt-6 md:pt-10 pb-16 md:pb-32 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="relative rounded-3xl overflow-hidden aspect-video liquid-glass">
           <div
@@ -1092,7 +1142,7 @@ function FeaturedBlock({ accent }: { accent: string }) {
             ))}
           </div>
 
-          <div className="absolute right-6 md:right-10 top-8 md:top-10 w-[300px] md:w-[360px] liquid-glass rounded-2xl p-5">
+          <div className="hidden md:block absolute right-10 top-10 w-[360px] liquid-glass rounded-2xl p-5">
             <div className="flex items-center justify-between mb-2 text-[10px] tracking-[0.18em] text-white/40">
               <span>DETECTED · r/SaaS</span>
               <span style={{ color: accent }}>INTENT SCORE {score}</span>
@@ -1130,6 +1180,32 @@ function FeaturedBlock({ accent }: { accent: string }) {
             >
               Watch a 90-second demo →
             </a>
+          </div>
+        </div>
+
+        {/* Mobile: show the intent card inline below the radar frame */}
+        <div className="md:hidden mt-6 liquid-glass rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-2 text-[10px] tracking-[0.18em] text-white/40">
+            <span>DETECTED · r/SaaS</span>
+            <span style={{ color: accent }}>INTENT SCORE {score}</span>
+          </div>
+          <div className="text-sm text-white leading-snug mb-3">
+            &quot;Tired of cold DMs. Is there a tool that surfaces posts where someone literally asks for what I built?&quot;
+          </div>
+          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-3">
+            <div className="h-full rounded-full transition-all" style={{ width: `${score}%`, background: accent }} />
+          </div>
+          <div className="text-[11px] text-white/40 mb-3">Suggested reply — value-first, no link</div>
+          <div className="text-xs text-white/70 leading-relaxed pretty">
+            &quot;I&apos;d start by asking what &apos;asking for it&apos; looks like in your niche. In B2B SaaS I&apos;ve seen patterns around pricing frustration, bad onboarding, and ...&quot;
+          </div>
+          <div className="flex items-center gap-2 mt-4">
+            <button className="text-[11px] text-black rounded-full px-3 py-1.5 font-medium" style={{ background: accent }}>
+              Copy reply
+            </button>
+            <button className="text-[11px] text-white/70 rounded-full px-3 py-1.5 font-medium liquid-glass">
+              Regenerate
+            </button>
           </div>
         </div>
       </div>
@@ -1174,9 +1250,9 @@ function Philosophy({ accent }: { accent: string }) {
   const inView = useInView(ref, { once: true, margin: '-100px' });
 
   return (
-    <section id="manifesto" ref={ref} className="relative bg-black py-28 md:py-40 px-6">
+    <section id="manifesto" ref={ref} className="relative overflow-hidden bg-black py-16 md:py-40 px-6">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-5xl md:text-7xl lg:text-8xl text-white tracking-tight mb-16 md:mb-24 balance">
+        <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-white tracking-tight mb-12 md:mb-24 balance leading-[1.05]">
           Listen <span className="serif-i text-white/40">×</span> Contribute
         </h2>
 
@@ -1374,14 +1450,14 @@ function Services({ accent }: { accent: string }) {
 
   return (
     <section
-      className="relative bg-black py-28 md:py-40 px-6"
+      className="relative overflow-hidden bg-black py-16 md:py-40 px-6"
       style={{
         backgroundImage: 'radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, transparent 60%)',
       }}
     >
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-baseline justify-between mb-16 gap-6">
-          <h3 className="text-3xl md:text-5xl text-white tracking-tight balance">
+        <div className="flex flex-col md:flex-row items-start md:items-baseline md:justify-between mb-10 md:mb-16 gap-3 md:gap-6">
+          <h3 className="text-3xl sm:text-4xl md:text-5xl text-white tracking-tight balance leading-[1.1]">
             What Karmora <span className="serif-i text-white/50">actually</span> does.
           </h3>
           <div className="text-white/40 text-sm hidden md:block tracking-wide">Two loops, running hourly.</div>
@@ -1410,9 +1486,9 @@ function Services({ accent }: { accent: string }) {
           ))}
         </div>
 
-        <div className="mt-24 md:mt-32 text-center">
+        <div className="mt-16 md:mt-32 text-center">
           <div className="text-white/40 text-xs tracking-[0.22em] uppercase mb-5">Ready?</div>
-          <h4 className="text-4xl md:text-6xl text-white tracking-tight balance mb-8">
+          <h4 className="text-3xl sm:text-4xl md:text-6xl text-white tracking-tight balance mb-8 leading-[1.1]">
             Your next customer is <span className="serif-i text-white/60">already</span> typing.
           </h4>
           <div className="flex items-center justify-center gap-3">
@@ -1441,6 +1517,21 @@ function Pricing({ accent }: { accent: string }) {
   const [annual, setAnnual] = useState(false);
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
+
+  const monthlyBtnRef = useRef<HTMLButtonElement>(null);
+  const annualBtnRef = useRef<HTMLButtonElement>(null);
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const active = annual ? annualBtnRef.current : monthlyBtnRef.current;
+      if (!active) return;
+      setPillStyle({ left: active.offsetLeft, width: active.offsetWidth });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [annual]);
 
   const Check = ({ on = true }: { on?: boolean }) => (
     <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" className="shrink-0 mt-0.5">
@@ -1482,7 +1573,7 @@ function Pricing({ accent }: { accent: string }) {
     <section
       id="pricing"
       ref={ref}
-      className="relative bg-[#0a0a0a] py-28 md:py-36 px-6 border-t border-neutral-900"
+      className="relative overflow-hidden bg-[#0a0a0a] py-16 md:py-36 px-6 border-t border-neutral-900"
       style={{ scrollMarginTop: '80px' }}
     >
       <div className="max-w-4xl mx-auto">
@@ -1492,7 +1583,7 @@ function Pricing({ accent }: { accent: string }) {
           }`}
         >
           <div className="text-neutral-500 text-xs tracking-[0.22em] uppercase mb-4">Pricing</div>
-          <h2 className="text-4xl md:text-5xl text-neutral-100 tracking-tight mb-3">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl text-neutral-100 tracking-tight mb-3 leading-[1.1]">
             Simple pricing. <span className="serif-i text-neutral-400">Ship this week.</span>
           </h2>
           <p className="text-neutral-500 text-base max-w-xl mx-auto">
@@ -1511,14 +1602,15 @@ function Pricing({ accent }: { accent: string }) {
           >
             <span
               aria-hidden="true"
-              className="absolute top-1 bottom-1 rounded-md bg-neutral-100 transition-transform duration-300 ease-out"
+              className="absolute top-1 bottom-1 rounded-md bg-neutral-100 transition-all duration-300 ease-out"
               style={{
-                left: '6px',
-                width: 'calc(50% - 10px)',
-                transform: annual ? 'translateX(calc(100% + 8px))' : 'translateX(0)',
+                left: pillStyle ? `${pillStyle.left}px` : 4,
+                width: pillStyle ? `${pillStyle.width}px` : 0,
+                opacity: pillStyle ? 1 : 0,
               }}
             />
             <button
+              ref={monthlyBtnRef}
               role="radio"
               aria-checked={!annual}
               onClick={() => setAnnual(false)}
@@ -1529,6 +1621,7 @@ function Pricing({ accent }: { accent: string }) {
               Monthly
             </button>
             <button
+              ref={annualBtnRef}
               role="radio"
               aria-checked={annual}
               onClick={() => setAnnual(true)}
