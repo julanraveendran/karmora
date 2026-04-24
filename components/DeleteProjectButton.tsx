@@ -47,9 +47,6 @@ export function DeleteProjectButton({ projectId, projectName, plan }: Props) {
       >
         {isPending ? 'Removing…' : 'Remove project'}
       </button>
-      {!isPro && (
-        <span className="text-xs text-muted">Pro only</span>
-      )}
       {error && <span className="text-xs text-red-400">{error}</span>}
     </div>
   );

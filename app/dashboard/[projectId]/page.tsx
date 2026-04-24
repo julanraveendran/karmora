@@ -3,6 +3,7 @@ import { createServer, createServiceRole } from '@/lib/supabase-server';
 import { redirect, notFound } from 'next/navigation';
 import { LeadCard } from '@/components/LeadCard';
 import { DeleteProjectButton } from '@/components/DeleteProjectButton';
+import { PlanButtons } from '@/components/PlanButtons';
 import type { LeadStatus, SafetyMode } from '@/lib/types';
 
 type SearchParams = { status?: string };
@@ -89,7 +90,7 @@ export default async function ProjectPage({
         <a href="/dashboard" className="text-sm text-muted hover:text-fg">
           ← All projects
         </a>
-        <div className="flex items-start justify-between mt-3 gap-4">
+        <div className="flex items-start justify-between mt-3 gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold">{project.name}</h1>
             <p className="text-xs text-muted mt-1">
@@ -101,13 +102,61 @@ export default async function ProjectPage({
                 : 'never scanned (next scan within an hour)'}
             </p>
           </div>
-          <DeleteProjectButton
-            projectId={project.id}
-            projectName={project.name}
-            plan={plan}
-          />
+          <div className="flex items-center gap-3">
+            <PlanButtons plan={plan} />
+            <DeleteProjectButton
+              projectId={project.id}
+              projectName={project.name}
+              plan={plan}
+            />
+          </div>
         </div>
       </header>
+
+      <section className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="md:col-span-2 border border-neutral-800 rounded-lg p-4">
+          <div className="text-xs uppercase tracking-wide text-muted mb-2">
+            What Karmora is watching
+          </div>
+          {project.description && (
+            <p className="text-sm text-fg/80 mb-3 whitespace-pre-wrap">
+              {project.description}
+            </p>
+          )}
+          {project.icp && (
+            <p className="text-xs text-muted mb-3">
+              <span className="text-fg/60">ICP:</span> {project.icp}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {project.target_subreddits.map((s: string) => (
+              <span
+                key={s}
+                className="text-xs border border-neutral-800 rounded-full px-2 py-0.5 text-muted"
+              >
+                r/{s.replace(/^r\//, '')}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="border border-neutral-800 rounded-lg p-4">
+          <div className="text-xs uppercase tracking-wide text-muted mb-2">
+            Scanner status
+          </div>
+          <div className="flex items-center gap-2 text-sm font-medium mb-2">
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${
+                project.last_scanned_at ? 'bg-green-500' : 'bg-amber-500'
+              }`}
+            />
+            {project.last_scanned_at ? 'Active' : 'Queued for first scan'}
+          </div>
+          <p className="text-xs text-muted">
+            Karmora scans your subreddits every hour. First leads usually arrive
+            within 60 minutes of project creation.
+          </p>
+        </div>
+      </section>
 
       <nav className="flex gap-2 mb-6 border-b border-neutral-800">
         {VALID_STATUSES.map((s) => {
