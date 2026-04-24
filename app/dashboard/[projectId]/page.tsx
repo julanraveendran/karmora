@@ -146,14 +146,25 @@ export default async function ProjectPage({
           <div className="flex items-center gap-2 text-sm font-medium mb-2">
             <span
               className={`inline-block w-2 h-2 rounded-full ${
-                project.last_scanned_at ? 'bg-green-500' : 'bg-amber-500'
+                project.last_scanned_at
+                  ? 'bg-green-500'
+                  : (counts.new ?? 0) > 0
+                  ? 'bg-amber-500'
+                  : 'bg-amber-500'
               }`}
             />
-            {project.last_scanned_at ? 'Active' : 'Queued for first scan'}
+            {project.last_scanned_at
+              ? 'Active'
+              : (counts.new ?? 0) > 0
+              ? 'Initial matches ready · fresh scan pending'
+              : 'Queued for first scan'}
           </div>
           <p className="text-xs text-muted">
-            Karmora scans your subreddits every hour. First leads usually arrive
-            within 60 minutes of project creation.
+            {project.last_scanned_at
+              ? 'Karmora scans your subreddits every hour. New leads appear here automatically.'
+              : (counts.new ?? 0) > 0
+              ? 'These are pattern matches from the last 48 hours. A deeper, LLM-scored scan runs within the hour and will add higher-quality leads.'
+              : 'Karmora scans your subreddits every hour. First leads usually arrive within 60 minutes of project creation.'}
           </p>
         </div>
       </section>

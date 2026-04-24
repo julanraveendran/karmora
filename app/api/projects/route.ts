@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@clerk/nextjs/server';
-import { createServer } from '@/lib/supabase-server';
+import { createServer, createServiceRole } from '@/lib/supabase-server';
 import { ensureProfile } from '@/lib/ensure-profile';
+import { matchIntentPatterns, matchesProject } from '@/lib/patterns';
+
+const BACKFILL_WINDOW_HOURS = 48;
+const BACKFILL_POOL_LIMIT = 1000;
+const BACKFILL_MAX_LEADS = 20;
 
 const Body = z.object({
   name: z.string().min(1).max(80),
@@ -62,5 +67,76 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  await backfillLeads(data.id, parsed.data);
+
   return NextResponse.json({ id: data.id });
+}
+
+async function backfillLeads(
+  projectId: string,
+  project: {
+    target_subreddits: string[];
+    keywords: string[];
+  }
+): Promise<void> {
+  try {
+    const admin = createServiceRole();
+    const subSet = new Set<string>();
+    for (const s of project.target_subreddits) {
+      subSet.add(s);
+      subSet.add(s.toLowerCase());
+    }
+
+    const since = new Date(
+      Date.now() - BACKFILL_WINDOW_HOURS * 60 * 60 * 1000
+    ).toISOString();
+
+    const { data: pool } = await admin
+      .from('raw_posts')
+      .select('id, title, body, subreddit')
+      .in('subreddit', Array.from(subSet))
+      .gte('posted_at', since)
+      .order('posted_at', { ascending: false })
+      .limit(BACKFILL_POOL_LIMIT);
+
+    if (!pool || pool.length === 0) return;
+
+    const projectForMatch = {
+      target_subreddits: project.target_subreddits,
+      keywords: project.keywords,
+      exclude_keywords: [] as string[],
+    };
+
+    const scored: {
+      raw_post_id: string;
+      score: number;
+      matched: string[];
+    }[] = [];
+    for (const post of pool) {
+      if (!matchesProject(post, projectForMatch)) continue;
+      const { score, matchedPatterns } = matchIntentPatterns(
+        `${post.title}\n\n${post.body || ''}`
+      );
+      if (score > 0) {
+        scored.push({ raw_post_id: post.id, score, matched: matchedPatterns });
+      }
+    }
+    if (scored.length === 0) return;
+
+    scored.sort((a, b) => b.score - a.score);
+    const top = scored.slice(0, BACKFILL_MAX_LEADS);
+
+    const rows = top.map((s) => ({
+      project_id: projectId,
+      raw_post_id: s.raw_post_id,
+      pattern_score: s.score,
+      matched_patterns: s.matched,
+    }));
+
+    await admin
+      .from('leads')
+      .upsert(rows, { onConflict: 'project_id,raw_post_id', ignoreDuplicates: true });
+  } catch (err) {
+    console.error('[backfillLeads] failed:', err);
+  }
 }
