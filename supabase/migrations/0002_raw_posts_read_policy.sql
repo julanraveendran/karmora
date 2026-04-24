@@ -14,6 +14,6 @@ create policy "read raw_posts via own leads" on public.raw_posts
       from public.leads l
       join public.projects p on p.id = l.project_id
       where l.raw_post_id = raw_posts.id
-        and p.user_id = auth.uid()
+        and p.user_id = (auth.jwt() ->> 'sub')
     )
   );

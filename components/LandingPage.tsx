@@ -8,7 +8,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { createClient } from '@/lib/supabase-browser';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 const ACCENT = '#ff7a3a';
 
@@ -666,34 +666,10 @@ function FeedTile({ it, accent }: { it: FeedItem; accent: string }) {
   );
 }
 
-/* ---------- Hero (with Supabase magic-link) ---------- */
+/* ---------- Hero (Clerk sign-up) ---------- */
 function Hero({ accent }: { accent: string }) {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email) return;
-    setStatus('sending');
-    setErrorMsg(null);
-    const supabase = createClient();
-    const redirectTo = `${window.location.origin}/api/auth/callback`;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
-    });
-    if (error) {
-      setStatus('error');
-      setErrorMsg(error.message);
-      return;
-    }
-    setStatus('sent');
-  }
-
-  const submitting = status === 'sending';
-  const sent = status === 'sent';
 
   return (
     <section className="relative min-h-screen overflow-hidden flex flex-col grain">
@@ -769,18 +745,22 @@ function Hero({ accent }: { accent: string }) {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            <a
-              href="#signup"
-              className="hidden sm:inline-block text-white/80 hover:text-white text-sm font-medium whitespace-nowrap"
-            >
-              Sign up
-            </a>
-            <a
-              href="#signup"
-              className="liquid-glass rounded-full px-4 md:px-5 py-2 text-sm font-medium text-white hover:bg-white/5 transition whitespace-nowrap"
-            >
-              Login
-            </a>
+            <SignUpButton mode="modal" forceRedirectUrl="/onboarding">
+              <button
+                type="button"
+                className="hidden sm:inline-block text-white/80 hover:text-white text-sm font-medium whitespace-nowrap"
+              >
+                Sign up
+              </button>
+            </SignUpButton>
+            <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+              <button
+                type="button"
+                className="liquid-glass rounded-full px-4 md:px-5 py-2 text-sm font-medium text-white hover:bg-white/5 transition whitespace-nowrap"
+              >
+                Login
+              </button>
+            </SignInButton>
             <button
               type="button"
               aria-label="Toggle menu"
@@ -816,9 +796,15 @@ function Hero({ accent }: { accent: string }) {
             <a href="#manifesto" onClick={() => setMenuOpen(false)} className="px-3 py-2 rounded-lg hover:bg-white/5">
               Manifesto
             </a>
-            <a href="#signup" onClick={() => setMenuOpen(false)} className="sm:hidden px-3 py-2 rounded-lg hover:bg-white/5">
-              Sign up
-            </a>
+            <SignUpButton mode="modal" forceRedirectUrl="/onboarding">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className="sm:hidden text-left px-3 py-2 rounded-lg hover:bg-white/5"
+              >
+                Sign up
+              </button>
+            </SignUpButton>
           </div>
         )}
       </nav>
@@ -849,7 +835,7 @@ function Hero({ accent }: { accent: string }) {
 
         <form
           id="signup"
-          onSubmit={onSubmit}
+          onSubmit={(e) => e.preventDefault()}
           className="liquid-glass rounded-full pl-6 pr-2 py-2 flex items-center gap-2 w-full max-w-md mb-4"
         >
           <input
@@ -858,26 +844,25 @@ function Hero({ accent }: { accent: string }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
-            disabled={submitting || sent}
-            className="bg-transparent text-white placeholder-white/40 text-sm flex-1 outline-none disabled:opacity-60"
+            className="bg-transparent text-white placeholder-white/40 text-sm flex-1 outline-none"
           />
-          <button
-            type="submit"
-            disabled={submitting || sent || !email}
-            className="w-10 h-10 rounded-full grid place-items-center text-black transition hover:scale-105 disabled:opacity-70"
-            style={{ background: sent ? '#fff' : accent }}
+          <SignUpButton
+            mode="modal"
+            initialValues={{ emailAddress: email }}
+            forceRedirectUrl="/onboarding"
           >
-            <Icon.Arrow size={18} />
-          </button>
+            <button
+              type="submit"
+              disabled={!email}
+              className="w-10 h-10 rounded-full grid place-items-center text-black transition hover:scale-105 disabled:opacity-70"
+              style={{ background: accent }}
+            >
+              <Icon.Arrow size={18} />
+            </button>
+          </SignUpButton>
         </form>
         <p className="text-white/40 text-xs mb-10">
-          {sent
-            ? `Magic link sent to ${email}. Check your inbox.`
-            : status === 'error'
-            ? errorMsg || 'Something went wrong. Try again.'
-            : submitting
-            ? 'Sending magic link...'
-            : 'Join 1,200+ founders getting the daily intent digest.'}
+          Join 1,200+ founders getting the daily intent digest.
         </p>
 
         <div className="flex items-center gap-3">

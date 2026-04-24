@@ -1,6 +1,8 @@
-import { createServer } from '@/lib/supabase-server';
+import { auth } from '@clerk/nextjs/server';
+import { createServer, createServiceRole } from '@/lib/supabase-server';
 import { redirect, notFound } from 'next/navigation';
 import { LeadCard } from '@/components/LeadCard';
+import { DeleteProjectButton } from '@/components/DeleteProjectButton';
 import type { LeadStatus, SafetyMode } from '@/lib/types';
 
 type SearchParams = { status?: string };
@@ -14,11 +16,9 @@ export default async function ProjectPage({
   params: { projectId: string };
   searchParams: SearchParams;
 }) {
+  const { userId } = await auth();
+  if (!userId) redirect('/');
   const supabase = createServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/');
 
   const { data: project } = await supabase
     .from('projects')
@@ -27,6 +27,14 @@ export default async function ProjectPage({
     .maybeSingle();
 
   if (!project) notFound();
+
+  const admin = createServiceRole();
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('plan')
+    .eq('id', userId)
+    .maybeSingle();
+  const plan: 'free' | 'pro' = profile?.plan === 'pro' ? 'pro' : 'free';
 
   const filter: LeadStatus = VALID_STATUSES.includes(
     searchParams.status as LeadStatus
@@ -81,7 +89,7 @@ export default async function ProjectPage({
         <a href="/dashboard" className="text-sm text-muted hover:text-fg">
           ← All projects
         </a>
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-start justify-between mt-3 gap-4">
           <div>
             <h1 className="text-2xl font-bold">{project.name}</h1>
             <p className="text-xs text-muted mt-1">
@@ -93,6 +101,11 @@ export default async function ProjectPage({
                 : 'never scanned (next scan within an hour)'}
             </p>
           </div>
+          <DeleteProjectButton
+            projectId={project.id}
+            projectName={project.name}
+            plan={plan}
+          />
         </div>
       </header>
 

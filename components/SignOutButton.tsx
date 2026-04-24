@@ -1,18 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-browser';
+import { useClerk } from '@clerk/nextjs';
 
 export function SignOutButton() {
-  const router = useRouter();
+  const { signOut } = useClerk();
   return (
     <button
-      onClick={async () => {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        router.push('/');
-        router.refresh();
-      }}
+      onClick={() => signOut({ redirectUrl: '/' })}
       className="text-muted hover:text-fg"
     >
       Sign out

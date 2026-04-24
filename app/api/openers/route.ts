@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import OpenAI from 'openai';
+import { auth } from '@clerk/nextjs/server';
 import { createServer, createServiceRole } from '@/lib/supabase-server';
 import type { SafetyMode } from '@/lib/types';
 
@@ -29,13 +30,11 @@ function loadPrompt(mode: SafetyMode): string {
 }
 
 export async function POST(request: Request) {
-  const supabase = createServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { userId } = await auth();
+  if (!userId) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+  const supabase = createServer();
 
   const json = await request.json().catch(() => null);
   const parsed = Body.safeParse(json);
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
   };
   const row = lead as unknown as LeadRow;
 
-  if (row.project.user_id !== user.id) {
+  if (row.project.user_id !== userId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -74,7 +73,7 @@ export async function POST(request: Request) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('reddit_karma')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle();
     const karma = profile?.reddit_karma ?? 0;
     if (karma < 1000) {

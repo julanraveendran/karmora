@@ -1,13 +1,12 @@
-import { createServer } from '@/lib/supabase-server';
+import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { CreateProjectForm } from '@/components/CreateProjectForm';
+import { ensureProfile } from '@/lib/ensure-profile';
 
 export default async function OnboardingPage() {
-  const supabase = createServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  const { userId } = await auth();
+  if (!userId) redirect('/');
+  await ensureProfile(userId);
 
   return (
     <main className="min-h-screen p-8 max-w-2xl mx-auto">

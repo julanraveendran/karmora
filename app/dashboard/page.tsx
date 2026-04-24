@@ -1,14 +1,28 @@
-import { createServer } from '@/lib/supabase-server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { createServer, createServiceRole } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import { SignOutButton } from '@/components/SignOutButton';
+import { PlanButtons } from '@/components/PlanButtons';
+import { ensureProfile } from '@/lib/ensure-profile';
 
 export default async function DashboardPage() {
-  const supabase = createServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { userId } = await auth();
+  if (!userId) redirect('/');
+  await ensureProfile(userId);
+  const clerkUser = await currentUser();
+  const email =
+    clerkUser?.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
+      ?.emailAddress ?? clerkUser?.emailAddresses[0]?.emailAddress ?? '';
 
-  if (!user) redirect('/');
+  const supabase = createServer();
+
+  const admin = createServiceRole();
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('plan')
+    .eq('id', userId)
+    .maybeSingle();
+  const plan: 'free' | 'pro' = profile?.plan === 'pro' ? 'pro' : 'free';
 
   const { data: projects } = await supabase
     .from('projects')
@@ -20,10 +34,11 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen p-8 max-w-5xl mx-auto">
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex items-center justify-between mb-8 gap-3 flex-wrap">
         <h1 className="text-2xl font-bold">Karmora</h1>
         <div className="flex items-center gap-3 text-sm">
-          <span className="text-muted">{user.email}</span>
+          <PlanButtons plan={plan} />
+          <span className="text-muted">{email}</span>
           <SignOutButton />
         </div>
       </header>

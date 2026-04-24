@@ -1,28 +1,19 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+import { auth } from '@clerk/nextjs/server';
 
-type CookieToSet = { name: string; value: string; options?: CookieOptions };
-
-// For server components + API routes — uses user's auth cookie
+// Server-side Supabase client for server components + API routes.
+// Clerk issues the session; we forward its JWT to Supabase so RLS
+// policies using (auth.jwt() ->> 'sub') see the Clerk user ID.
+// Requires Clerk configured as a third-party auth provider in Supabase.
 export function createServer() {
-  const cookieStore = cookies();
-  return createServerClient(
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(list: CookieToSet[]) {
-          try {
-            list.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // called from a server component — safe to ignore
-          }
-        },
+      auth: { persistSession: false, autoRefreshToken: false },
+      async accessToken() {
+        const { getToken } = await auth();
+        return (await getToken()) ?? null;
       },
     }
   );
@@ -30,10 +21,9 @@ export function createServer() {
 
 // For background tasks that need to bypass RLS — NEVER expose to browser
 export function createServiceRole() {
-  const { createClient } = require('@supabase/supabase-js');
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
+    { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }

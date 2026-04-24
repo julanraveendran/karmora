@@ -1,8 +1,13 @@
 # Session 4 — paste-ready Claude Code prompt
 
 **When to use:** After Session 3 ships (proxies working, 5 subs clean).
-You'll need SSH access to the Hostinger VPS that runs OpenClaw, plus your
-existing Telegram bot token + chat ID from Xylo.
+You'll need SSH access to the Hostinger VPS (`srv1521543.hstgr.cloud`,
+user `root`, key `~/.ssh/id_ed25519` / comment `julan@karmora-deploy`)
+and a Telegram bot token + chat ID for Karmora (see step 3).
+
+**Status (2026-04-24):** Deployed. Scanner lives at
+`/root/karmora/scanner/` with prompts at `/root/karmora/prompts/`.
+Hourly cron fires and writes Telegram summaries to `@karmoramainbot`.
 
 **Session goal:** Scanner running on the VPS via crontab hourly, Telegram
 alerts on failure. Truly unattended.
@@ -24,42 +29,49 @@ VPS.** Make it run hourly without me babysitting it.
 
 ## Tasks (in order)
 
-1. **Copy scanner to VPS.** From local Karmora root:
+1. **Copy scanner + prompts to VPS.** Scorer.js reads
+   `../prompts/lead-scoring.txt`, so the prompts dir must sit next to the
+   scanner dir. Deploy layout is `/root/karmora/{scanner,prompts}/`.
+   From local Karmora root (rsync not installed in Git Bash → tar + scp):
    ```bash
-   rsync -avz --exclude node_modules --exclude .env scanner/ \
-     root@<vps-ip>:/root/karmora-scanner/
-   ```
-   (Or scp -r, whichever you've used for OpenClaw. Keep it parallel to
-   `/root/openclaw/`.)
-
-2. **SSH in, install deps:**
-   ```bash
-   ssh root@<vps-ip>
-   cd /root/karmora-scanner
-   npm install --omit=dev
+   tar czf /tmp/karmora-scanner.tar.gz -C scanner \
+     --exclude=node_modules --exclude=.env .
+   scp /tmp/karmora-scanner.tar.gz scanner/.env \
+     root@srv1521543.hstgr.cloud:/tmp/
+   scp -r prompts root@srv1521543.hstgr.cloud:/tmp/prompts-new
    ```
 
-3. **Create `/root/karmora-scanner/.env`** with the same vars as local
-   `scanner/.env` PLUS:
+2. **SSH in, lay out the tree, install deps:**
+   ```bash
+   ssh root@srv1521543.hstgr.cloud
+   mkdir -p /root/karmora/scanner
+   tar xzf /tmp/karmora-scanner.tar.gz -C /root/karmora/scanner/
+   mv /tmp/.env /root/karmora/scanner/.env
+   chmod 600 /root/karmora/scanner/.env
+   rm -rf /root/karmora/prompts && mv /tmp/prompts-new /root/karmora/prompts
+   rm /tmp/karmora-scanner.tar.gz
+   cd /root/karmora/scanner && npm ci --omit=dev
    ```
-   TELEGRAM_BOT_TOKEN=<from xylo .env>
-   TELEGRAM_CHAT_ID=<from xylo .env>
-   ```
-   `chmod 600 .env` so it's not world-readable.
+
+3. **Telegram bot.** Karmora uses its own bot (`@karmoramainbot`), NOT
+   Xylo's. If starting fresh:
+   - DM `@BotFather` → `/newbot` → get `TELEGRAM_BOT_TOKEN`
+   - Send a message to the bot, then
+     `curl https://api.telegram.org/bot<TOKEN>/getUpdates` → grab
+     `result[].message.chat.id` → that's your `TELEGRAM_CHAT_ID`
+   - Put both in `scanner/.env` locally, then re-scp the `.env`
 
 4. **Test one manual run on VPS:**
    ```bash
-   cd /root/karmora-scanner && node index.js --once
+   cd /root/karmora/scanner && node index.js --once
    ```
-   Expect: same console output as local, plus a Telegram message with the
-   run summary.
+   Expect: console output + Telegram summary message.
 
 5. **Add hourly crontab.** Run `crontab -e` and append:
    ```
-   0 * * * * cd /root/karmora-scanner && /usr/bin/node index.js --once >> /var/log/karmora-scanner.log 2>&1
+   0 * * * * cd /root/karmora/scanner && /usr/bin/node index.js --once >> /var/log/karmora-scanner.log 2>&1
    ```
-   (Confirm node path with `which node` — `/usr/bin/node` is common but
-   not universal. NVM users will have a different path.)
+   (Confirm node path with `which node` — `/usr/bin/node` on this VPS.)
 
 6. **Pre-create the log file** so cron can write to it:
    ```bash
@@ -86,16 +98,19 @@ VPS.** Make it run hourly without me babysitting it.
 ## Failure-mode test
 
 Before you walk away, intentionally break something to confirm Telegram
-catches it:
+catches it. DO NOT move `.env` away — that also strips Telegram creds, so
+no alert can fire. Instead, shadow a single var:
 
-1. SSH in: `mv /root/karmora-scanner/.env /root/karmora-scanner/.env.bak`
-2. Run: `cd /root/karmora-scanner && node index.js --once`
-3. Expect: Telegram receives an error alert via `alertError()` in
-   `scanner/telegram.js`
-4. Restore: `mv /root/karmora-scanner/.env.bak /root/karmora-scanner/.env`
+```bash
+cd /root/karmora/scanner && \
+  SUPABASE_SERVICE_ROLE_KEY=invalid_for_test node index.js --once
+```
 
-If no Telegram alert fired on the broken run, fix `scanner/telegram.js`
-before declaring done. Silent failures are worse than no monitoring.
+Expect: fatal error `Invalid API key` → Telegram alert via `alertError()`
+in `scanner/telegram.js`. No cleanup needed (the override was in-shell).
+
+If no Telegram alert fired, fix `scanner/telegram.js` before declaring
+done. Silent failures are worse than no monitoring.
 
 ## Do NOT
 
@@ -106,3 +121,11 @@ before declaring done. Silent failures are worse than no monitoring.
   Session 1 is fine
 - Start Session 5 (intent patterns) in the same sitting. Walk away. Let
   it run for 24h before declaring victory.
+
+## Known issue (parked 2026-04-24)
+
+Three subreddits — r/Entrepreneur, r/smallbusiness, r/SideProject —
+consistently return HTTP 403 from Webshare proxies. The scanner still
+succeeds on the other 3 subs. Fix in a dedicated session (rotate UA,
+switch to `/new.json?limit=25&raw_json=1`, or try a different proxy
+provider).

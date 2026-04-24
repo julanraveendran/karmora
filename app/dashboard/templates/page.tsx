@@ -1,14 +1,11 @@
-import { createServer } from '@/lib/supabase-server';
+import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { VIRAL_TEMPLATES } from '@/lib/viral-templates';
 import { ViralTemplatesClient } from '@/components/ViralTemplatesClient';
 
 export default async function TemplatesPage() {
-  const supabase = createServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/');
+  const { userId } = await auth();
+  if (!userId) redirect('/');
 
   return (
     <main className="min-h-screen p-8 max-w-6xl mx-auto">

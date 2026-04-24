@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { auth } from '@clerk/nextjs/server';
 import { createServer } from '@/lib/supabase-server';
+import { ensureProfile } from '@/lib/ensure-profile';
 
 const Body = z.object({
   name: z.string().min(1).max(80),
@@ -12,13 +14,12 @@ const Body = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = createServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { userId } = await auth();
+  if (!userId) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+  await ensureProfile(userId);
+  const supabase = createServer();
 
   const json = await request.json().catch(() => null);
   const parsed = Body.safeParse(json);
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
 
   const { data: canCreate, error: limitErr } = await supabase.rpc(
     'user_can_create_project',
-    { uid: user.id }
+    { uid: userId }
   );
   if (limitErr) {
     return NextResponse.json({ error: limitErr.message }, { status: 500 });
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('projects')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       name: parsed.data.name,
       description: parsed.data.description,
       product_url: parsed.data.product_url ?? null,
