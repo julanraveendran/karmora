@@ -1,6 +1,8 @@
 services:
   scanner-webhook:
-    build: .
+    build:
+      context: ..
+      dockerfile: scanner/Dockerfile
     image: karmora-scanner-webhook:latest
     container_name: karmora-scanner-webhook
     restart: unless-stopped
@@ -10,7 +12,6 @@ services:
       - "3001"
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=bridge"
       - "traefik.http.routers.karmora-scanner.rule=Host(`scanner.karmora.com`)"
       - "traefik.http.routers.karmora-scanner.entrypoints=websecure"
       - "traefik.http.routers.karmora-scanner.tls.certresolver=letsencrypt"
