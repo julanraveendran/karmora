@@ -68,8 +68,28 @@ export async function POST(request: Request) {
   }
 
   await backfillLeads(data.id, parsed.data);
+  await triggerFirstScan(data.id);
 
   return NextResponse.json({ id: data.id });
+}
+
+async function triggerFirstScan(projectId: string): Promise<void> {
+  const url = process.env.SCANNER_WEBHOOK_URL;
+  const secret = process.env.SCANNER_WEBHOOK_SECRET;
+  if (!url || !secret) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ projectId }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch (err) {
+    console.error('[triggerFirstScan] failed:', err);
+  }
 }
 
 async function backfillLeads(

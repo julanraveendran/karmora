@@ -14,6 +14,7 @@
 //   node index.js            # loop forever with delay (for dev)
 
 import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
 import { fetchManySubreddits, sleep } from './reddit.js';
 import { loadProxies, getProxyCount } from './proxy.js';
 import { matchIntentPatterns, matchesProject } from './patterns.js';
@@ -32,7 +33,7 @@ const LOOP_DELAY_MS = 60 * 60 * 1000; // 1h
 const LLM_SCORE_THRESHOLD = 1; // only LLM-score posts with pattern_score >= 1
 const LLM_MAX_PER_RUN = 50;    // cost cap: max LLM calls per project per run
 
-async function scanProject(project) {
+export async function scanProject(project) {
   const startedAt = Date.now();
   const run = {
     project_id: project.id,
@@ -176,4 +177,6 @@ async function main() {
   }
 }
 
-main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
