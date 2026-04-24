@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import { LeadCard } from '@/components/LeadCard';
 import { DeleteProjectButton } from '@/components/DeleteProjectButton';
 import { PlanButtons } from '@/components/PlanButtons';
+import { RefreshLeadsButton } from '@/components/RefreshLeadsButton';
 import type { LeadStatus, SafetyMode } from '@/lib/types';
 
 type SearchParams = { status?: string };
@@ -169,25 +170,30 @@ export default async function ProjectPage({
         </div>
       </section>
 
-      <nav className="flex gap-2 mb-6 border-b border-neutral-800">
-        {VALID_STATUSES.map((s) => {
-          const active = filter === s;
-          return (
-            <a
-              key={s}
-              href={`/dashboard/${project.id}?status=${s}`}
-              className={`px-3 py-2 text-sm border-b-2 -mb-px ${
-                active
-                  ? 'border-accent text-fg'
-                  : 'border-transparent text-muted hover:text-fg'
-              }`}
-            >
-              {labelFor(s)}{' '}
-              <span className="text-xs text-muted">({counts[s] ?? 0})</span>
-            </a>
-          );
-        })}
-      </nav>
+      <div className="flex items-end justify-between gap-4 mb-6 border-b border-neutral-800">
+        <nav className="flex gap-2">
+          {VALID_STATUSES.map((s) => {
+            const active = filter === s;
+            return (
+              <a
+                key={s}
+                href={`/dashboard/${project.id}?status=${s}`}
+                className={`px-3 py-2 text-sm border-b-2 -mb-px ${
+                  active
+                    ? 'border-accent text-fg'
+                    : 'border-transparent text-muted hover:text-fg'
+                }`}
+              >
+                {labelFor(s)}{' '}
+                <span className="text-xs text-muted">({counts[s] ?? 0})</span>
+              </a>
+            );
+          })}
+        </nav>
+        <div className="pb-2">
+          <RefreshLeadsButton />
+        </div>
+      </div>
 
       {rows.length === 0 ? (
         <div className="border border-neutral-800 rounded-lg p-8 text-center">
