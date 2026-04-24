@@ -1,7 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+
+const AUTO_REFRESH_MS = 30_000;
 
 export function RefreshLeadsButton() {
   const router = useRouter();
@@ -12,6 +14,16 @@ export function RefreshLeadsButton() {
       router.refresh();
     });
   }
+
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === 'visible') {
+        startTransition(() => router.refresh());
+      }
+    };
+    const id = setInterval(tick, AUTO_REFRESH_MS);
+    return () => clearInterval(id);
+  }, [router]);
 
   return (
     <button
