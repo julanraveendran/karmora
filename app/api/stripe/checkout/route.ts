@@ -18,7 +18,16 @@ export async function POST(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
-  const priceId = process.env.STRIPE_PRICE_ID_PRO;
+
+  const body = await request.json().catch(() => ({}));
+  const interval: 'monthly' | 'annual' =
+    body.interval === 'annual' ? 'annual' : 'monthly';
+
+  const priceId =
+    interval === 'annual'
+      ? process.env.STRIPE_PRICE_ID_PRO_ANNUAL || process.env.STRIPE_PRICE_ID_PRO
+      : process.env.STRIPE_PRICE_ID_PRO;
+
   if (!priceId) {
     return NextResponse.json(
       { error: 'billing not configured' },

@@ -8,7 +8,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { SignInButton, SignUpButton } from '@clerk/nextjs';
+import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
 
 const ACCENT = '#ff7a3a';
 
@@ -1500,6 +1500,9 @@ function Services({ accent }: { accent: string }) {
 /* ---------- Pricing ---------- */
 function Pricing({ accent }: { accent: string }) {
   const [annual, setAnnual] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const { isSignedIn } = useUser();
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
 
@@ -1553,6 +1556,32 @@ function Pricing({ accent }: { accent: string }) {
       setAnnual((a) => !a);
     }
   };
+
+  async function handleUpgrade() {
+    if (!isSignedIn) {
+      window.location.href = '/sign-up';
+      return;
+    }
+    setCheckoutLoading(true);
+    setCheckoutError(null);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interval: annual ? 'annual' : 'monthly' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setCheckoutError(data.error || 'Checkout unavailable');
+        setCheckoutLoading(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setCheckoutError('Network error');
+      setCheckoutLoading(false);
+    }
+  }
 
   return (
     <section
@@ -1709,12 +1738,16 @@ function Pricing({ accent }: { accent: string }) {
             </ul>
 
             <button
-              onClick={() => alert('Checkout coming soon')}
-              className="mt-auto block text-center rounded-md text-sm font-semibold py-3 transition-transform hover:scale-[1.01] active:scale-[0.99]"
+              onClick={handleUpgrade}
+              disabled={checkoutLoading}
+              className="mt-auto block w-full text-center rounded-md text-sm font-semibold py-3 transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ background: accent, color: '#0a0a0a' }}
             >
-              Upgrade to Pro
+              {checkoutLoading ? 'Redirecting…' : 'Upgrade to Pro'}
             </button>
+            {checkoutError && (
+              <p className="text-red-400 text-xs mt-2 text-center">{checkoutError}</p>
+            )}
           </div>
         </div>
 
